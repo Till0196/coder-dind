@@ -122,11 +122,11 @@ resource "coder_agent" "main" {
     esac
     cd /tmp
     curl -sSL $(curl -s https://api.github.com/repos/openai/codex/releases/latest | \
-      jq -r '.assets[] | select(.name | contains("'"$CODEX_ARCH"'") and endswith("unknown-linux-musl.tar.gz") and (contains("codex-responses-api-proxy") | not)) | .browser_download_url') \
-      -o codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz
-    sudo tar -zxvf codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz -C /usr/local/bin
-    sudo mv /usr/local/bin/codex-$${CODEX_ARCH}-unknown-linux-musl /usr/local/bin/codex
-    rm codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz
+      jq -r '.assets[] | select(.name == "codex-'"$CODEX_ARCH"'-unknown-linux-musl.tar.gz") | .browser_download_url') \
+      -o codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz 2>/dev/null
+    sudo tar -zxf codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz -C /usr/local/bin > /dev/null 2>&1
+    sudo mv /usr/local/bin/codex-$${CODEX_ARCH}-unknown-linux-musl /usr/local/bin/codex 2>/dev/null
+    rm -f codex-$${CODEX_ARCH}-unknown-linux-musl.tar.gz
 
   EOT
 
@@ -284,7 +284,7 @@ resource "docker_container" "dind" {
   privileged = true
   name       = "dind-${data.coder_workspace.me.id}"
   entrypoint = ["sh", "-c"]
-  command    = ["addgroup -g 1000 coder && rm -f /var/run/docker.pid && exec dockerd -H unix:///var/run/docker.sock --group coder"]
+  command    = ["addgroup -g 1000 coder && rm -f /var/run/docker.pid /var/run/docker/containerd/containerd.pid && exec dockerd -H unix:///var/run/docker.sock --group coder"]
   
   volumes {
     volume_name    = docker_volume.dind_socket.name
